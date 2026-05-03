@@ -1,4 +1,5 @@
 """FastAPI application - REST API for the AI Trading System dashboard."""
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -240,8 +241,6 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
 
-
-import asyncio
 
 # Serve frontend static files
 import os
