@@ -199,19 +199,44 @@ async def get_symbols():
     return settings.trading.symbols
 
 
+@app.get("/api/prices")
+async def get_live_prices():
+    """Get latest live prices from all WebSocket sources."""
+    from backend.data.market_data import market_data_provider, SYMBOL_SOURCE
+    prices = {}
+    for symbol in settings.trading.symbols:
+        price = market_data_provider.get_latest_price(symbol)
+        source = SYMBOL_SOURCE.get(symbol, "unknown")
+        prices[symbol] = {
+            "price": price,
+            "source": source,
+            "live": price is not None,
+        }
+    return prices
+
+
 # ── WebSocket for live updates ──────────────────────────────
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
+            from backend.data.market_data import market_data_provider
+            prices = {}
+            for sym in settings.trading.symbols:
+                p = market_data_provider.get_latest_price(sym)
+                if p:
+                    prices[sym] = p
+
             data = {
                 "status": trading_engine.get_system_status(),
                 "signals": trading_engine.current_signals,
                 "risk": risk_agent.get_risk_summary(),
+                "live_prices": prices,
+                "data_sources": market_data_provider.get_data_sources_status(),
             }
             await websocket.send_json(data)
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
     except WebSocketDisconnect:
         pass
 

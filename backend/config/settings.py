@@ -1,13 +1,24 @@
 """Global configuration settings for the AI Trading System."""
 import os
-from typing import Optional
 from pydantic import BaseModel
 
 
 class BinanceConfig(BaseModel):
-    api_key: str = os.getenv("BINANCE_API_KEY", "")
-    api_secret: str = os.getenv("BINANCE_API_SECRET", "")
-    testnet: bool = True
+    """Binance config — uses public WebSocket and REST API, no API keys required."""
+    ws_url: str = "wss://data-stream.binance.vision/stream?streams="
+    rest_url: str = "https://data-api.binance.vision/api/v3"
+
+
+class TickDBConfig(BaseModel):
+    """TickDB WebSocket config for forex/commodities."""
+    ws_url: str = os.getenv("TICKDB_WS_URL", "wss://ws.tickdb.io/v1/stream")
+    api_key: str = os.getenv("TICKDB_API_KEY", "")
+
+
+class BiQuoteConfig(BaseModel):
+    """BiQuote WebSocket config for stocks/indices."""
+    ws_url: str = os.getenv("BIQUOTE_WS_URL", "wss://ws.biquote.io/v1/stream")
+    api_key: str = os.getenv("BIQUOTE_API_KEY", "")
 
 
 class TelegramConfig(BaseModel):
@@ -24,8 +35,12 @@ class RiskConfig(BaseModel):
 
 class TradingConfig(BaseModel):
     symbols: list[str] = [
-        "BTCUSDT", "ETHUSDT", "EURUSD", "GBPUSD", "USDJPY",
-        "XAUUSD", "SPX500", "NAS100", "BNBUSDT", "SOLUSDT"
+        # Crypto (Binance WebSocket - no API keys)
+        "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT",
+        # Forex (TickDB WebSocket)
+        "EURUSD", "GBPUSD", "USDJPY", "XAUUSD",
+        # Indices & Stocks (BiQuote WebSocket)
+        "SPX500", "NAS100",
     ]
     timeframes: list[str] = ["1m", "5m", "15m", "1h", "4h", "1d"]
     primary_timeframe: str = "15m"
@@ -35,6 +50,8 @@ class TradingConfig(BaseModel):
 
 class SystemConfig(BaseModel):
     binance: BinanceConfig = BinanceConfig()
+    tickdb: TickDBConfig = TickDBConfig()
+    biquote: BiQuoteConfig = BiQuoteConfig()
     telegram: TelegramConfig = TelegramConfig()
     risk: RiskConfig = RiskConfig()
     trading: TradingConfig = TradingConfig()

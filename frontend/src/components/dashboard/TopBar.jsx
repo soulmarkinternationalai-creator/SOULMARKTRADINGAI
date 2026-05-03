@@ -13,7 +13,9 @@ export default function TopBar({ status }) {
 
   const sourceIcons = {
     connected: '●',
+    streaming: '●',
     disconnected: '○',
+    simulated: '◐',
     no_keys: '◐',
     unavailable: '○',
     error: '✕',
@@ -21,7 +23,9 @@ export default function TopBar({ status }) {
 
   const sourceColors = {
     connected: '#22c55e',
+    streaming: '#22c55e',
     disconnected: '#ef4444',
+    simulated: '#f59e0b',
     no_keys: '#f59e0b',
     unavailable: '#6b7280',
     error: '#ef4444',

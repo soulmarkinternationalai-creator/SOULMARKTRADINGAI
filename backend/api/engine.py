@@ -1,4 +1,4 @@
-"""Main trading engine - orchestrates all components."""
+"""Main trading engine - orchestrates all components with live WebSocket data."""
 import asyncio
 import logging
 from datetime import datetime
@@ -32,25 +32,30 @@ class TradingEngine:
         self._start_time = datetime.utcnow()
 
     async def start(self):
-        """Start the trading engine."""
+        """Start the trading engine with WebSocket connections."""
         logger.info("Starting AI Trading Engine...")
+        logger.info("Connecting to data sources: Binance (WS), TickDB (WS), BiQuote (WS)")
         await market_data_provider.initialize()
         self.is_running = True
         self.status.status = "LIVE"
         self._start_time = datetime.utcnow()
         self._task = asyncio.create_task(self._run_loop())
+
+        sources = market_data_provider.get_data_sources_status()
+        logger.info(f"Data sources: {sources}")
         logger.info(f"Engine started with {meta_agent.get_strategy_count()} strategies")
 
     async def stop(self):
-        """Stop the trading engine."""
+        """Stop the trading engine and disconnect WebSockets."""
         self.is_running = False
         self.status.status = "PAUSED"
         if self._task:
             self._task.cancel()
-        logger.info("Engine stopped")
+        await market_data_provider.disconnect()
+        logger.info("Engine stopped, WebSocket connections closed")
 
     async def _run_loop(self):
-        """Main analysis loop."""
+        """Main analysis loop - processes live data from WebSocket streams."""
         while self.is_running:
             try:
                 await self._run_analysis_cycle()
@@ -73,14 +78,14 @@ class TradingEngine:
         except ValueError:
             self.status.active_session = TradingSession.OFF_HOURS
 
-        for symbol in settings.trading.symbols[:3]:
+        for symbol in settings.trading.symbols:
             try:
                 await self._analyze_symbol(symbol)
             except Exception as e:
                 logger.error(f"Error analyzing {symbol}: {e}")
 
     async def _analyze_symbol(self, symbol: str):
-        """Run full analysis pipeline for a symbol."""
+        """Run full analysis pipeline for a symbol using live WebSocket data."""
         df = await market_data_provider.get_ohlcv(
             symbol, settings.trading.primary_timeframe, settings.data_history_bars
         )
@@ -131,6 +136,9 @@ class TradingEngine:
 
         self.current_signals[symbol] = execution
 
+        # Include latest price from WebSocket if available
+        latest_price = market_data_provider.get_latest_price(symbol)
+
         chart_data = {
             "timestamps": [t.isoformat() for t in df.index[-100:]],
             "open": df["open"].tail(100).tolist(),
@@ -146,6 +154,7 @@ class TradingEngine:
             "bb_lower": features["bb_lower"].tail(100).tolist() if "bb_lower" in features else [],
             "support_levels": features.get("support_levels", []),
             "resistance_levels": features.get("resistance_levels", []),
+            "latest_price": latest_price,
         }
 
         return {
