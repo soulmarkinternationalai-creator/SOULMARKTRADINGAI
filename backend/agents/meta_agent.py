@@ -114,6 +114,7 @@ class MetaAgent:
 
             top_strategies.append({
                 "name": sig.strategy_name,
+                "family": sig.strategy_family.value,
                 "signal": sig.signal.value,
                 "confidence": round(weighted_confidence, 2),
                 "reasoning": sig.reasoning

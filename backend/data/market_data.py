@@ -90,7 +90,7 @@ class MarketDataProvider:
 
     def _generate_simulated_data(self, symbol: str, timeframe: str, limit: int) -> pd.DataFrame:
         """Generate realistic simulated market data."""
-        np.random.seed(hash(symbol) % 2**31)
+        rng = np.random.default_rng(hash((symbol, timeframe, datetime.utcnow().strftime('%Y%m%d%H%M'))) % 2**31)
 
         base_prices = {
             "BTCUSDT": 65000, "ETHUSDT": 3500, "BNBUSDT": 600, "SOLUSDT": 150,
@@ -108,15 +108,15 @@ class MarketDataProvider:
 
         prices = [base]
         for i in range(1, limit):
-            change = np.random.normal(0, volatility)
+            change = rng.normal(0, volatility)
             trend = np.sin(i / 50) * volatility * 0.5
             prices.append(prices[-1] + change + trend)
 
         opens = prices
-        highs = [p + abs(np.random.normal(0, volatility * 0.5)) for p in prices]
-        lows = [p - abs(np.random.normal(0, volatility * 0.5)) for p in prices]
-        closes = [p + np.random.normal(0, volatility * 0.3) for p in prices]
-        volumes = [abs(np.random.normal(1000, 300)) for _ in prices]
+        highs = [p + abs(rng.normal(0, volatility * 0.5)) for p in prices]
+        lows = [p - abs(rng.normal(0, volatility * 0.5)) for p in prices]
+        closes = [p + rng.normal(0, volatility * 0.3) for p in prices]
+        volumes = [abs(rng.normal(1000, 300)) for _ in prices]
 
         df = pd.DataFrame({
             "timestamp": timestamps,

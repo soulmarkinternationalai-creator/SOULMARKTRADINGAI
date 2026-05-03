@@ -23,7 +23,7 @@ class RiskAgent:
         if self.open_trades >= self.max_open_trades:
             return {"approved": False, "reason": f"Max open trades ({self.max_open_trades}) reached"}
 
-        daily_dd = abs(self.daily_pnl) / self.balance if self.balance > 0 else 0
+        daily_dd = abs(min(self.daily_pnl, 0)) / self.balance if self.balance > 0 else 0
         if daily_dd >= self.max_daily_drawdown:
             return {"approved": False, "reason": f"Daily drawdown limit ({self.max_daily_drawdown*100}%) reached"}
 
@@ -68,7 +68,7 @@ class RiskAgent:
         self.open_trades = max(0, self.open_trades - 1)
 
     def get_risk_summary(self) -> dict:
-        daily_dd = abs(self.daily_pnl) / self.balance if self.balance > 0 else 0
+        daily_dd = abs(min(self.daily_pnl, 0)) / self.balance if self.balance > 0 else 0
         return {
             "balance": round(self.balance, 2),
             "equity": round(self.equity, 2),
